@@ -2,10 +2,15 @@ import logging
 
 from django.contrib.contenttypes.fields import GenericForeignKey
 from django.contrib.contenttypes.models import ContentType
+from django.db import connection
 from django.db import models
 from django.db.models import CharField
-# from django.contrib.postgres.fields import JSONField
-from jsonfield import JSONField
+
+if connection.vendor == 'postgresql':
+    from django.contrib.postgres.fields import JSONField
+else:
+    from jsonfield import JSONField
+
 from model_utils import Choices
 from model_utils.fields import StatusField
 from rest_framework.exceptions import ValidationError  # from django.core.exceptions import ValidationError
