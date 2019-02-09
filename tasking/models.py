@@ -52,6 +52,8 @@ class ModelTask(models.Model):
 
     do_run = False
 
+    source_model = None
+
     def __init__(self, *args, do_run=False, queryset=None, **kwargs):
         self.do_run = do_run
         self.res = None

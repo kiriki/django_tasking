@@ -1,27 +1,11 @@
+from django.contrib.contenttypes.models import ContentType
 from rest_framework import serializers
 
 from tasking.models import ModelTask
 
 
-class TaskedObjectRelatedField(serializers.RelatedField):
-    """
-    A custom field to use for the `tagged_object` generic relationship.
-    """
-
-    def to_representation(self, value):
-        """
-        Serialize tagged objects to a simple textual representation.
-        """
-        if isinstance(value, TumblrBlog):
-            serializer = TumblrBlogSerializer(value, context=self.context)
-            return serializer.data
-        raise Exception('Unexpected type of tagged object')
-
-
 class ModelTaskSerializer(serializers.ModelSerializer):
     do_run = serializers.BooleanField(write_only=True, initial=True)
-
-    # content_object = TaskedObjectRelatedField(read_only=True)
 
     class Meta:
         model = ModelTask
@@ -33,7 +17,7 @@ class ModelTaskSerializer(serializers.ModelSerializer):
 
         if 'parent_lookup_object_id' in self.context:
             data['object_id'] = self.context['parent_lookup_object_id']
-            data['content_type'] = self.context['parent_lookup_content_type']
+            data['content_type'] = ContentType.objects.get_for_model(self.Meta.model.source_model)
 
         return super().create(data)
 
