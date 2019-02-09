@@ -9,12 +9,14 @@ log = logging.getLogger(__name__)
 
 
 class CallbackTaskNew(Task):
+    ModelTaskClz = ModelTask
+
     @property
     def task_model(self):
         try:
-            return ModelTask.objects.get(id=self.model_task_id)
-        except ModelTask.DoesNotExist:
-            print("ModelTask.DoesNotExist")
+            return self.ModelTaskClz.objects.get(id=self.model_task_id)
+        except self.ModelTaskClz.DoesNotExist:
+            print("self.ModelTaskClz.DoesNotExist")
             raise
 
     def run(self, *args, **kwargs):
@@ -30,8 +32,8 @@ class CallbackTaskNew(Task):
 
         try:
             self.task_model.sync(self.request.id)
-        except ModelTask.DoesNotExist as e:
-            log.error("can't sync - ModelTask.DoesNotExist")
+        except self.ModelTaskClz.DoesNotExist as e:
+            log.error("can't sync - {model}.DoesNotExist")
             log.exception(e)
         except Exception as e:
             print(e)

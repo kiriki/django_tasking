@@ -32,6 +32,12 @@ class ModelTask(models.Model):
     STATUS = Choices('created', 'start', 'active', 'done', 'del')
     TASK_NAME = Choices(TASK_NAME_BASE_TEST, )
 
+    tasks_dict = {}
+    _c_tasks = {
+        TASK_NAME_BASE_TEST: TASK_BASE_TEST,
+        # 'init': 'tumblr.tasks.init_blog',
+    }
+
     content_type = models.ForeignKey(ContentType, on_delete=models.CASCADE)
     object_id = models.PositiveIntegerField()
     content_object = GenericForeignKey()
@@ -52,6 +58,10 @@ class ModelTask(models.Model):
         if queryset:
             self.queryset = queryset
 
+        self._tasks_dict = {**self._c_tasks, **self.tasks_dict}
+
+        self._meta.get_field('task').choices = Choices(*self._tasks_dict.keys())
+
         super().__init__(*args, **kwargs)
 
     def __str__(self):
@@ -61,11 +71,7 @@ class ModelTask(models.Model):
         ordering = ['created']
 
     def get_celery_task_name(self):
-        c_tasks = {
-            TASK_NAME_BASE_TEST: TASK_BASE_TEST,
-            'init': 'tumblr.tasks.init_blog',
-        }
-        return c_tasks.get(self.task)
+        return self._tasks_dict.get(self.task)
 
     def get_task_params(self):
         # return dict(kwargs=({'blog_task_id': self.id, 'task_name': self.task_name}))
