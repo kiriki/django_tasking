@@ -30,7 +30,6 @@ def validate_only_one_instance(obj):
 
 class ModelTask(models.Model):
     STATUS = Choices('created', 'start', 'active', 'done', 'del')
-    TASK_NAME = Choices(TASK_NAME_BASE_TEST, )
 
     tasks_dict = {}
     _c_tasks = {
@@ -42,7 +41,7 @@ class ModelTask(models.Model):
     object_id = models.PositiveIntegerField()
     content_object = GenericForeignKey()
 
-    task = CharField(choices=TASK_NAME, max_length=100)
+    task = CharField(max_length=100)
 
     status = StatusField()
     task_result = JSONField(default=dict, blank=True)
