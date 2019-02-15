@@ -17,7 +17,7 @@ from rest_framework.exceptions import ValidationError  # from django.core.except
 
 log = logging.getLogger(__name__)
 
-TASK_NAME_BASE_TEST = 'base_test'  # -> 'tasking.tasks.test_task'
+ACTION_BASE_TEST = 'base_test'  # -> 'tasking.tasks.test_task'
 TASK_BASE_TEST = 'tasking.tasks.test_task'
 
 
@@ -32,8 +32,8 @@ class ModelTask(models.Model):
     STATUS = Choices('created', 'start', 'active', 'done', 'del')
 
     tasks_dict = {}
-    _c_tasks = {
-        TASK_NAME_BASE_TEST: TASK_BASE_TEST,
+    _actions = {
+        ACTION_BASE_TEST: TASK_BASE_TEST,
         # 'init': 'tumblr.tasks.init_blog',
     }
 
@@ -41,7 +41,8 @@ class ModelTask(models.Model):
     object_id = models.PositiveIntegerField()
     content_object = GenericForeignKey()
 
-    task = CharField(max_length=100)
+    action = CharField(max_length=100)
+    celery_task = CharField(max_length=100)
 
     status = StatusField()
     task_result = JSONField(default=dict, blank=True)
@@ -59,25 +60,27 @@ class ModelTask(models.Model):
         if queryset:
             self.queryset = queryset
 
-        self._tasks_dict = {**self._c_tasks, **self.tasks_dict}
+        self._tasks_dict = {**self._actions, **self.tasks_dict}
 
-        self._meta.get_field('task').choices = Choices(*self._tasks_dict.keys())
+        self._meta.get_field('action').choices = Choices(*self._tasks_dict.keys())
 
         super().__init__(*args, **kwargs)
 
+        self.celery_task = self.get_celery_task_name()
+
     def __str__(self):
-        return f"Model task '{self.task}', id={self.pk}"
+        return f"Model task '{self.action}', id={self.pk}"
 
     class Meta:
         ordering = ['created']
 
     def get_celery_task_name(self):
-        return self._tasks_dict.get(self.task)
+        return self._tasks_dict.get(self.action)
 
     def get_task_params(self):
         # return dict(kwargs=({'blog_task_id': self.id, 'task_name': self.task_name}))
         # return dict(kwargs=dict(name=self.collection.display_name, task_id=self.id))
-        return dict(kwargs={'object_id': self.object_id, 'task_id': self.id})
+        return dict(kwargs={'object_id': self.object_id, 'task_id': self.id, 'action': self.action})
 
     def run_task(self):
         """

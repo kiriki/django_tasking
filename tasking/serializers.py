@@ -9,7 +9,7 @@ class ModelTaskSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = ModelTask
-        fields = ('id', 'content_type', 'object_id', 'task', 'status', 'task_result', 'do_run')
+        fields = ('id', 'content_type', 'object_id', 'action', 'status', 'task_result', 'do_run')
         read_only_fields = ('task_result', 'status', 'object_id', 'content_type')
 
     def create(self, validated_data):
@@ -28,4 +28,4 @@ class TaskSerializerMonitorExtend(serializers.ModelSerializer):
     class Meta:
         model = ModelTask
         # fields = ('id', 'content_type', 'object_id', 'content_object', 'task_name', 'status', 'task_result')
-        fields = ('id', 'content_type', 'object_id', 'task', 'status', 'task_result')
+        fields = ('id', 'content_type', 'object_id', 'action', 'status', 'task_result')
