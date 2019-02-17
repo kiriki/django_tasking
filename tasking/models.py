@@ -34,6 +34,7 @@ class ModelTask(models.Model):
     tasks_dict = {}
     _actions = {
         ACTION_BASE_TEST: TASK_BASE_TEST,
+        's': 'z',
         # 'init': 'tumblr.tasks.init_blog',
     }
 
@@ -62,9 +63,9 @@ class ModelTask(models.Model):
 
         self._tasks_dict = {**self._actions, **self.tasks_dict}
 
-        self._meta.get_field('action').choices = Choices(*self._tasks_dict.keys())
-
         super().__init__(*args, **kwargs)
+
+        self._meta.get_field('action').choices = Choices(*self._tasks_dict.keys())
 
         self.celery_task = self.get_celery_task_name()
 
