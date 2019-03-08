@@ -16,11 +16,11 @@ class CallbackTaskNew(Task):
         try:
             return self.ModelTaskClz.objects.get(id=self.model_task_id)
         except self.ModelTaskClz.DoesNotExist:
-            print("self.ModelTaskClz.DoesNotExist")
+            print('self.ModelTaskClz.DoesNotExist')
             raise
 
     def run(self, *args, **kwargs):
-        print("run CallbackTask")
+        print('run CallbackTask')
 
     def do_sync_task(self, source='caller'):
         """
@@ -33,17 +33,17 @@ class CallbackTaskNew(Task):
         try:
             self.task_model.sync(self.request.id)
         except self.ModelTaskClz.DoesNotExist as e:
-            log.error("can't sync - {model}.DoesNotExist")
+            log.error('can\'t sync - {model}.DoesNotExist')
             log.exception(e)
         except Exception as e:
             print(e)
 
     def on_success(self, retval, task_id, args, kwargs):
-        log.info("on_success")
+        log.info('on_success')
         self.do_sync_task(source='on_success')
 
     def on_failure(self, exc, task_id, args, kwargs, einfo):
-        log.error("on_failure", einfo)
+        log.error('on_failure', einfo)
         self.do_sync_task(source='on_fail')
 
 
@@ -59,7 +59,7 @@ def test_task(self, task_id, arg=None, steps=10, **kwargs):
         k += 1
         time.sleep(3)
 
-        log.info('long running task ' + str(k))
+        log.info(f'long running task {k}')
 
         self.update_state(state='PROGRESS', meta={'current': k, 'total': total})
         self.do_sync_task(source='on_prorgess')
