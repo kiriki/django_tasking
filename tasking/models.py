@@ -29,13 +29,12 @@ def validate_only_one_instance(obj):
 
 
 class ModelTask(models.Model):
-    STATUS = Choices('created', 'start', 'active', 'done', 'del')
+    source_model = None
+    do_run = False
 
-    tasks_dict = {}
-    _actions = {
+    tasks = {
         ACTION_BASE_TEST: TASK_BASE_TEST,
-        's': 'z',
-        # 'init': 'tumblr.tasks.init_blog',
+        # **tasks_dict,
     }
 
     content_type = models.ForeignKey(ContentType, on_delete=models.CASCADE)
@@ -45,15 +44,12 @@ class ModelTask(models.Model):
     action = CharField(max_length=100)
     celery_task = CharField(max_length=100)
 
+    STATUS = Choices('created', 'start', 'active', 'done', 'del')
     status = StatusField()
     task_result = JSONField(default=dict, blank=True)
 
     closed = models.BooleanField(default=False)
     created = models.DateTimeField(auto_now_add=True, null=True)
-
-    do_run = False
-
-    source_model = None
 
     def __init__(self, *args, do_run=False, queryset=None, **kwargs):
         self.do_run = do_run
@@ -61,22 +57,19 @@ class ModelTask(models.Model):
         if queryset:
             self.queryset = queryset
 
-        self._tasks_dict = {**self._actions, **self.tasks_dict}
+        # self.tasks = {**self._actions, **self.tasks_dict}
 
         super().__init__(*args, **kwargs)
 
-        self._meta.get_field('action').choices = Choices(*self._tasks_dict.keys())
+        # self._meta.get_field('action').choices = Choices(*self.tasks.keys())
 
-        self.celery_task = self.get_celery_task_name()
+        self.celery_task = self.tasks.get(self.action)
 
     def __str__(self):
         return f"Model task '{self.action}', id={self.pk}"
 
     class Meta:
         ordering = ['created']
-
-    def get_celery_task_name(self):
-        return self._tasks_dict.get(self.action)
 
     def get_task_params(self):
         # return dict(kwargs=({'blog_task_id': self.id, 'task_name': self.task_name}))
@@ -92,8 +85,7 @@ class ModelTask(models.Model):
         print('do run_task')
         from celery import current_app
 
-        task_name = self.get_celery_task_name()
-        log.info(f'run_task: {task_name}')
+        log.info(f'run_task: {self.celery_task}')
 
         # task = self.get_celery_task()
         # log.info(f'run_task: {task.__name__}')
@@ -101,7 +93,7 @@ class ModelTask(models.Model):
         params = self.get_task_params()
 
         # self.res = task.apply_async(**params)
-        self.res = current_app.send_task(task_name, **params)
+        self.res = current_app.send_task(self.celery_task, **params)
 
         self.status = 'start'
         self.save()
