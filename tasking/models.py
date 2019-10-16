@@ -25,14 +25,15 @@ def validate_only_one_instance(obj):
     model = obj.__class__
     if (model.objects.count() > 0 and
             obj.id != model.objects.get().id):
-        raise ValidationError(f'Can only create 1 {model.__name_} instance')
+        raise ValidationError(f'Can only create 1 {model.__name__} instance')
 
 
 class ModelTask(models.Model):
     source_model = None
     do_run = False
 
-    tasks = {
+    tasks = {}
+    tasks_base = {
         ACTION_BASE_TEST: TASK_BASE_TEST,
         # **tasks_dict,
     }
@@ -57,6 +58,7 @@ class ModelTask(models.Model):
         if queryset:
             self.queryset = queryset
 
+        self.tasks.update(self.tasks_base)
         # self.tasks = {**self._actions, **self.tasks_dict}
 
         super().__init__(*args, **kwargs)
@@ -64,6 +66,8 @@ class ModelTask(models.Model):
         # self._meta.get_field('action').choices = Choices(*self.tasks.keys())
 
         self.celery_task = self.tasks.get(self.action)
+        assert self.action is not None
+        # assert self.celery_task is not None, f"action = {self.action}, tasks = {self.tasks}, class = {self.__class__.__name__}"
 
     def __str__(self):
         return f"Model task '{self.action}', id={self.pk}"
