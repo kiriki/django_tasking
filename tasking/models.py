@@ -6,11 +6,6 @@ from django.db import connection
 from django.db import models
 from django.db.models import CharField
 
-if connection.vendor == 'postgresql':
-    from django.contrib.postgres.fields import JSONField
-else:
-    from jsonfield import JSONField
-
 from model_utils import Choices
 from model_utils.fields import StatusField
 from rest_framework.exceptions import ValidationError  # from django.core.exceptions import ValidationError
@@ -47,7 +42,7 @@ class ModelTask(models.Model):
 
     STATUS = Choices('created', 'start', 'active', 'done', 'del')
     status = StatusField()
-    task_result = JSONField(default=dict, blank=True)
+    task_result = models.JSONField(default=dict, blank=True)
 
     closed = models.BooleanField(default=False)
     created = models.DateTimeField(auto_now_add=True, null=True)
