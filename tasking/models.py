@@ -2,13 +2,11 @@ import logging
 
 from django.contrib.contenttypes.fields import GenericForeignKey
 from django.contrib.contenttypes.models import ContentType
-from django.db import connection
-from django.db import models
+from django.db import connection, models
 from django.db.models import CharField
-
 from model_utils import Choices
 from model_utils.fields import StatusField
-from rest_framework.exceptions import ValidationError  # from django.core.exceptions import ValidationError
+from rest_framework.exceptions import ValidationError
 
 log = logging.getLogger(__name__)
 
@@ -47,14 +45,17 @@ class ModelTask(models.Model):
     closed = models.BooleanField(default=False)
     created = models.DateTimeField(auto_now_add=True, null=True)
 
-    def __init__(self, *args, do_run=False, queryset=None, **kwargs):
+    def __init__(self, *args, do_run=False, queryset=None, params=None, **kwargs):
         self.do_run = do_run
         self.res = None
+        self.task_params = {}
         if queryset:
             self.queryset = queryset
 
         self.tasks.update(self.tasks_base)
         # self.tasks = {**self._actions, **self.tasks_dict}
+        if params:
+            self.task_params = params
 
         super().__init__(*args, **kwargs)
 
@@ -62,7 +63,6 @@ class ModelTask(models.Model):
 
         self.celery_task = self.tasks.get(self.action)
         assert self.action is not None
-        # assert self.celery_task is not None, f"action = {self.action}, tasks = {self.tasks}, class = {self.__class__.__name__}"
 
     def __str__(self):
         return f"Model task '{self.action}', id={self.pk}"
@@ -73,13 +73,17 @@ class ModelTask(models.Model):
     def get_task_params(self):
         # return dict(kwargs=({'blog_task_id': self.id, 'task_name': self.task_name}))
         # return dict(kwargs=dict(name=self.collection.display_name, task_id=self.id))
-        return dict(kwargs={'object_id': self.object_id, 'task_id': self.id, 'action': self.action})
+        return dict(kwargs={'object_id': self.object_id,
+                            'task_id': self.id,
+                            'action': self.action,
+                            **self.task_params,
+                            })
 
     def run_task(self):
         """
         Запуск задачи
         В норме запускается при первом сохранении модели, если установлен флаг 'do_run'
-        проверки что задача такого типа исполняется в единственном экземпляре
+        проверки, что задача такого типа исполняется в единственном экземпляре
         """
         print('do run_task')
         from celery import current_app
@@ -126,7 +130,7 @@ class ModelTask(models.Model):
                                  closed=False)
 
         if a.exists() & self._state.adding:
-            raise ValidationError("Only one open instance for this action, got {} exists".format(a.count()))
+            raise ValidationError(f'Only one open instance for this action, got {a.count()} exists')
 
     def save(self, *args, **kwargs):
         self.full_clean(exclude=['collection'])
