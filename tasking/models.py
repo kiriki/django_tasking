@@ -25,7 +25,7 @@ class ModelTask(models.Model):
     source_model = None
     do_run = False
 
-    tasks = {}
+    tasks: dict[str, str] = {}
     tasks_base = {
         ACTION_BASE_TEST: TASK_BASE_TEST,
         # **tasks_dict,
@@ -48,8 +48,8 @@ class ModelTask(models.Model):
     def __init__(self, *args, do_run=False, queryset=None, params=None, **kwargs):
         self.do_run = do_run
         self.res = None
-        self.task_params = {}
-        if queryset:
+        self.task_params = params or {}
+        if queryset is not None:
             self.queryset = queryset
 
         self.tasks.update(self.tasks_base)
@@ -63,6 +63,7 @@ class ModelTask(models.Model):
 
         self.celery_task = self.tasks.get(self.action)
         assert self.action is not None
+        # assert self.celery_task is not None, f"action = {self.action}, tasks = {self.tasks}, class = {self.__class__.__name__}"
 
     def __str__(self):
         return f"Model task '{self.action}', id={self.pk}"
