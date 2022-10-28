@@ -6,7 +6,7 @@ from django.db import connection, models
 from django.db.models import CharField
 from model_utils import Choices
 from model_utils.fields import StatusField
-from rest_framework.exceptions import ValidationError
+from django.core.exceptions import ValidationError
 
 log = logging.getLogger(__name__)
 
